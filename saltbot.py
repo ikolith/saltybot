@@ -20,5 +20,4 @@ async def on_message(message):
 
     if message.content.lower().startswith('!test'):
         await message.channel.send(':salt:')
-print(token)
 client.run(token)
