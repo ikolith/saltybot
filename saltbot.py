@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-#
 
 import discord
 import sqlite3
 import os
 import asyncio
 from random import randint
-from secret_token import BOT_TOKEN
-
+token_error = "no token found. Please create a file called secret_token.py in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"\nthe rest of the script will attempt to run now, but almost certainly will not work.\n"
+try:
+    from secret_token import BOT_TOKEN
+except:
+    print(token_error)
 token = BOT_TOKEN
 if(not token):
-    print("no token found. Please create a file called secret_token.py in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"")
-    print("the rest of the script will attempt to run now, but almost certainly will not work.")
-    print()
+    print(token_error)
 client = discord.Client()
 game_channel = ''
 
