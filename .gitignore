@@ -1,3 +1,9 @@
 .env
 .vscode
+<<<<<<< HEAD
 saltbot_venv
+=======
+saltbot_venv
+secret_token.py
+database.sqlite3
+>>>>>>> 62db2b012a73dcd1e6ea6b39d87aad977ec8e039
