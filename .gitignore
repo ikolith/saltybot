@@ -2,3 +2,4 @@
 .vscode
 saltbot_venv
 secret_token.py
+database.sqlite3

@@ -22,16 +22,52 @@ async def salt_spawn():
         #print(game_channel)
         if game_channel != '':
             time_to_salt_spawn = randint(5,500)
+            print(time_to_salt_spawn)
             await asyncio.sleep(time_to_salt_spawn)
             print('send salt')
             await game_channel.send('salt')
-            print(time_to_salt_spawn)
+
+#if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
+#see on_ready for this code in use
+#by the way, all these commands are case insentive so i suggest we use lowercase to be super cas.
+# you can also alter tables later, that's cool. there are many more commands
+def create_database():
+    #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
+    db = sqlite3.connect("database.sqlite3") # i guess we could have just one of these for the whole file, since we don't need to share state with other processes or anything
+    cursor = db.cursor()
+    cursor.execute("create table players (discord_id int unique, points int)")
+    # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
+    # which is useful for making "pointers" from one table to another, I think
+    db.commit() # commit the changes to the database file
+    db.close() # close connect (will discard uncommited changes)
+def insert_new_player(discord_id):
+    db = sqlite3.connect("database.sqlite3")
+    cursor = db.cursor()
+    cursor.execute("insert into players values (?, ?)", (discord_id, 0)) #NEVER use regular string interpolation!
+    db.commit()
+    db.close()
+def print_players():
+    db = sqlite3.connect("database.sqlite3")
+    cursor = db.cursor()
+    cursor.execute("select * from players")
+    print(cursor.fetchall()) #could also fetchone if we wanted only one player
+    db.close()
 
 
 @client.event
 async def on_ready():
     print(f'{client.user} ready.')
-    #await salt_spawn()
+    #example code
+    try:
+        create_database()
+    except:
+        pass
+    print_players()
+    try:
+        insert_new_player(42)
+    except:
+        pass #there's already a player there (mostly because this is dummy example code)
+    print_players()
     await salt_spawn()
 
 @client.event
