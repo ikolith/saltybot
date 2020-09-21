@@ -10,8 +10,7 @@ try:
     from secret_token import BOT_TOKEN
 except:
     print(token_error)
-token = BOT_TOKEN
-if(not token):
+if(not BOT_TOKEN):
     print(token_error)
 client = discord.Client()
 game_channel = ''
@@ -112,4 +111,4 @@ async def on_message(message):
         
     #if message.content.lower().startswith('')
 
-client.run(token)
+client.run(BOT_TOKEN)
