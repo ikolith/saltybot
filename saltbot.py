@@ -5,7 +5,7 @@ import sqlite3
 import os
 import asyncio
 from random import randint
-token_error = "no token found. Please create a file called secret_token.py in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"\nthe rest of the script will attempt to run now, but almost certainly will not work.\n"
+token_error = "No token found. Please create a file called secret_token.py in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"\nthe rest of the script will attempt to run now, but almost certainly will not work.\n"
 try:
     from secret_token import BOT_TOKEN
 except:
@@ -14,6 +14,8 @@ if(not BOT_TOKEN):
     print(token_error)
 client = discord.Client()
 game_channel = ''
+db = sqlite3.connect("database.sqlite3") # i guess we could have just one of these for the whole file, since we don't need to share state with other processes or anything
+cursor = db.cursor()
 
 async def salt_spawn():
     while True:
@@ -30,32 +32,35 @@ async def salt_spawn():
 #see on_ready for this code in use
 #by the way, all these commands are case insentive so i suggest we use lowercase to be super cas.
 # you can also alter tables later, that's cool. there are many more commands
+def query(query, values_to_substitute_in = ()):
+    cursor.execute(query,values_to_substitute_in)
+    db.commit()
+
 def create_database():
     #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
-    db = sqlite3.connect("database.sqlite3") # i guess we could have just one of these for the whole file, since we don't need to share state with other processes or anything
-    cursor = db.cursor()
+
     cursor.execute("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
     # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
     # which is useful for making "pointers" from one table to another, I think
     db.commit() # commit the changes to the database file
-    db.close() # close connect (will discard uncommited changes)
 def insert_new_player(discord_id):
     db = sqlite3.connect("database.sqlite3")
     cursor = db.cursor()
     cursor.execute("INSERT INTO players VALUES (?, ?)", (discord_id, 0)) #NEVER use regular string interpolation!
     db.commit()
-    db.close()
 def print_players():
     db = sqlite3.connect("database.sqlite3")
     cursor = db.cursor()
     cursor.execute("SELECT * FROM players")
     print(cursor.fetchall()) #could also fetchone if we wanted only one player
-    db.close()
 def check_message(message,cue):
     if game_channel != '':
+        #this check could be moved to on_ready to save some time later..?
         return message.content.lower().startswith('!'+ cue)
     else: 
         return False
+def get_item(discord_id, item, quantity, scrip)
+    db = sqlite3.connect('database.sqliet3')
 
 @client.event
 async def on_ready():
