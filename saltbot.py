@@ -35,7 +35,7 @@ def create_database():
     #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
     db = sqlite3.connect("database.sqlite3") # i guess we could have just one of these for the whole file, since we don't need to share state with other processes or anything
     cursor = db.cursor()
-    cursor.execute("create table players (discord_id int unique, points int)")
+    cursor.execute("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
     # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
     # which is useful for making "pointers" from one table to another, I think
     db.commit() # commit the changes to the database file
@@ -43,17 +43,20 @@ def create_database():
 def insert_new_player(discord_id):
     db = sqlite3.connect("database.sqlite3")
     cursor = db.cursor()
-    cursor.execute("insert into players values (?, ?)", (discord_id, 0)) #NEVER use regular string interpolation!
+    cursor.execute("INSERT INTO players VALUES (?, ?)", (discord_id, 0)) #NEVER use regular string interpolation!
     db.commit()
     db.close()
 def print_players():
     db = sqlite3.connect("database.sqlite3")
     cursor = db.cursor()
-    cursor.execute("select * from players")
+    cursor.execute("SELECT * FROM players")
     print(cursor.fetchall()) #could also fetchone if we wanted only one player
     db.close()
 def check_message(message,cue):
-   return message.content.lower().startswith('!'+ cue)
+    if game_channel != '':
+        return message.content.lower().startswith('!'+ cue)
+    else: 
+        return False
 
 @client.event
 async def on_ready():
