@@ -6,13 +6,11 @@ import sqlite3
 import os
 import asyncio
 from random import randint
-from dotenv import load_dotenv
+from secret_token import BOT_TOKEN
 
-
-load_dotenv()
-token = os.getenv('BOT_TOKEN')
+token = BOT_TOKEN
 if(not token):
-    print("no token found. Please create a file called .env in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"")
+    print("no token found. Please create a file called token.py in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"")
     print("the rest of the script will attempt to run now, but almost certainly will not work.")
     print()
 client = discord.Client()
