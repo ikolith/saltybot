@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+#
+
 import discord
 import sqlite3
 import os
@@ -8,6 +11,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 token = os.getenv('BOT_TOKEN')
+if(not token):
+    print("no token found. Please create a file called .env in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"")
+    print("the rest of the script will attempt to run now, but almost certainly will not work.")
+    print()
 client = discord.Client()
 game_channel = ''
 
@@ -16,9 +23,10 @@ async def salt_spawn():
         await asyncio.sleep(1)
         #print(game_channel)
         if game_channel != '':
-            time_to_salt_spawn = randint(2,5)
+            time_to_salt_spawn = randint(5,500)
             await asyncio.sleep(time_to_salt_spawn)
             print('send salt')
+            await game_channel.send('salt')
             print(time_to_salt_spawn)
 
 
