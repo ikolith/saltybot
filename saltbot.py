@@ -13,9 +13,15 @@ except:
 if(not BOT_TOKEN):
     print(token_error)
 client = discord.Client()
+
 game_channel = ''
-db = sqlite3.connect("database.sqlite3") # i guess we could have just one of these for the whole file, since we don't need to share state with other processes or anything
-cursor = db.cursor()
+
+db = sqlite3.connect("database.sqlite3") # we have just one of these for the whole program, since we don't need to share state with other processes or anything
+cursor = db.cursor() # we have just one of these for the whole program, since we don't need to share state with other processes or anything
+def query(query, values_to_substitute_in = ()):
+    cursor.execute(query, values_to_substitute_in)
+    db.commit() # commit any changes to the database file
+    return cursor.fetchall() # return a list of all our findings
 
 async def salt_spawn():
     while True:
@@ -30,37 +36,28 @@ async def salt_spawn():
 
 #if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
 #see on_ready for this code in use
-#by the way, all these commands are case insentive so i suggest we use lowercase to be super cas.
 # you can also alter tables later, that's cool. there are many more commands
-def query(query, values_to_substitute_in = ()):
-    cursor.execute(query,values_to_substitute_in)
-    db.commit()
-
+#CODE should YELL at YOU
 def create_database():
     #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
-
-    cursor.execute("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
+    query("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
     # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
     # which is useful for making "pointers" from one table to another, I think
-    db.commit() # commit the changes to the database file
 def insert_new_player(discord_id):
     db = sqlite3.connect("database.sqlite3")
     cursor = db.cursor()
     cursor.execute("INSERT INTO players VALUES (?, ?)", (discord_id, 0)) #NEVER use regular string interpolation!
     db.commit()
 def print_players():
-    db = sqlite3.connect("database.sqlite3")
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM players")
-    print(cursor.fetchall()) #could also fetchone if we wanted only one player
+    print(query("SELECT * FROM players")) #could also fetchone if we wanted only one player
 def check_message(message,cue):
     if game_channel != '':
         #this check could be moved to on_ready to save some time later..?
         return message.content.lower().startswith('!'+ cue)
     else: 
         return False
-def get_item(discord_id, item, quantity, scrip)
-    db = sqlite3.connect('database.sqliet3')
+def get_items(discord_id):
+    return query("SELECT * FROM items WHERE player = ?",discord_id)
 
 @client.event
 async def on_ready():
