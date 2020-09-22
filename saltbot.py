@@ -41,8 +41,8 @@ async def salt_spawn():
 def create_tables():
     #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
     query("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
-    query("CREATE TABLE owned_items (discord_id INT UNIQUE, item_type INT, scrip TEXT, FOREIGN KEY(item_type) REFERENCES items(item_type)")
-    query("CREATE TABLE items (item_type INT, description TEXT, price INT")
+    query("CREATE TABLE owned_items (discord_id INT UNIQUE, item_type INT, scrip TEXT, FOREIGN KEY(item_type) REFERENCES items(item_type))")
+    query("CREATE TABLE items (item_type INT, description TEXT, price INT)")
 
     # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
     # which is useful for making "pointers" from one table to another, I think
@@ -67,14 +67,16 @@ async def on_ready():
     #example code
     try:
         create_tables()
-    except:
-        pass
+    except sqlite3.OperationalError as e:
+        print(e)
+        print("aborting table creation")
     print_players()
     try:
         insert_new_player(42)
     except:
         pass #there's already a player there (mostly because this is dummy example code)
     print_players()
+    print(query("SELECT * FROM sqlite_master WHERE type='table';"))
     await salt_spawn()
 
 @client.event
