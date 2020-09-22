@@ -65,8 +65,8 @@ def check_message(message,cue):
         return False
 #def return_items(discord_id):
     #return query("SELECT * FROM items WHERE player = ?",discord_id)
-def take_item(discord_id, item):
-    query()
+#def take_item(discord_id, item):
+    #query()
 
 @client.event
 async def on_ready():
