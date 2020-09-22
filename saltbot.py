@@ -14,6 +14,7 @@ if(not BOT_TOKEN):
     print(token_error)
 client = discord.Client()
 
+available_items = []
 game_channel = ''
 
 db = sqlite3.connect("database.sqlite3") # we have just one of these for the whole program, since we don't need to share state with other processes or anything
@@ -22,6 +23,11 @@ def query(query, values_to_substitute_in = ()):
     cursor.execute(query, values_to_substitute_in)
     db.commit() # commit any changes to the database file
     return cursor.fetchall() # return a list of all our findings
+'''
+async def post_and_spawn_item(item_query,spawn_message = ''):
+
+    available_items.remove(item_query)
+    await game_channel.send('-'+item_query[0][0]+'-' + ' crawls up the cave wall and disappears into it.')
 
 async def salt_spawn():
     while True:
@@ -31,8 +37,23 @@ async def salt_spawn():
             time_to_salt_spawn = randint(5,500)
             print(time_to_salt_spawn)
             await asyncio.sleep(time_to_salt_spawn)
-            print('send salt')
-            await game_channel.send('salt')
+            salt_rock = query('SELECT * FROM items WHERE item_type = 'salt rock' ')
+            await item_spawn(salt_rock,'You spot a -salt rock-.')
+'''
+async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_message, time_until_expiration, expiration_message):
+    while True:
+        await asyncio.sleep(1)
+        if game_channel != '':
+            time_to_spawn = randint(time_to_spawn_low,time_to_spawn_high) #should replace this with a tuple or something later
+            await asyncio.sleep(time_to_spawn)
+            #print(time_to_spawn) #here for testing, the two above lines will probably get consolidated later
+            item_type = [item_type]
+            item_query = query('SELECT * FROM items WHERE item_type = ?',item_type)
+            available_items.append(item_query)
+            await game_channel.send(spawn_message, file = discord.File ( ".\\art\\"+item_query[0][3], filename = item_query[0][3]))
+            await asyncio.sleep(time_until_expiration)
+            available_items.remove(item_query)
+            await game_channel.send('-'+item_query[0][0]+'- ' + expiration_message)
 
 #if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
 #see on_ready for this code in use
@@ -83,7 +104,7 @@ async def on_ready():
     #and remove it afterwards; that way it will execute once even though tables are already created
     # or you could just put the line at the TOP of create_tables, before the ones that are already created, I guess.
     write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
-    await salt_spawn()
+    await spawn_handler('salt rock',5,6,'You spot a -salt rock-.',100,'crawls up the cave wall and disappears into it')
 
 @client.event
 async def on_message(message):
