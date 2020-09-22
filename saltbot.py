@@ -37,15 +37,22 @@ async def salt_spawn():
 #if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
 #see on_ready for this code in use
 # you can also alter tables later, that's cool. there are many more commands
+# I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
+# which is useful for making foreign key references from one table to another, I think
 #CODE should YELL at YOU
 def create_tables():
-    #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
-    query("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
-    query("CREATE TABLE owned_items (discord_id INT UNIQUE, item_type INT, scrip TEXT, FOREIGN KEY(item_type) REFERENCES items(item_type))")
-    query("CREATE TABLE items (item_type INT, description TEXT, price INT)")
+    with open('schema.sql','r') as f:
+        for line in f.readlines():
+            try:
+                query(line)
+            except sqlite3.OperationalError as e:
+                print(e)
 
-    # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
-    # which is useful for making "pointers" from one table to another, I think
+def write_schema():
+    with open('schema.sql',"w") as f:
+        for result in query("SELECT sql FROM sqlite_master WHERE type='table';"):
+            f.write(result[0]+'\n')
+
 def insert_new_player(discord_id):
     query("INSERT INTO players VALUES (?, ?)", (discord_id, 0))
 def print_players():
@@ -64,12 +71,7 @@ def take_item(discord_id, item):
 @client.event
 async def on_ready():
     print(f'{client.user} ready.')
-    #example code
-    try:
-        create_tables()
-    except sqlite3.OperationalError as e:
-        print(e)
-        print("aborting table creation")
+    create_tables()
     print_players()
     try:
         insert_new_player(42)
@@ -80,7 +82,7 @@ async def on_ready():
 
     #and remove it afterwards; that way it will execute once even though tables are already created
     # or you could just put the line at the TOP of create_tables, before the ones that are already created, I guess.
-    print(query("SELECT * FROM sqlite_master WHERE type='table';")) #TODO: print this out to a file to track schema changes. MAYBE: read that file in in create_tables()
+    write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
     await salt_spawn()
 
 @client.event
