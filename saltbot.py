@@ -38,16 +38,16 @@ async def salt_spawn():
 #see on_ready for this code in use
 # you can also alter tables later, that's cool. there are many more commands
 #CODE should YELL at YOU
-def create_database():
+def create_tables():
     #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
     query("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
+    query("CREATE TABLE owned_items (discord_id INT UNIQUE, item_type INT, scrip TEXT, FOREIGN KEY(item_type) REFERENCES items(item_type)")
+    query("CREATE TABLE items (item_type INT, description TEXT, price INT")
+
     # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
     # which is useful for making "pointers" from one table to another, I think
 def insert_new_player(discord_id):
-    db = sqlite3.connect("database.sqlite3")
-    cursor = db.cursor()
-    cursor.execute("INSERT INTO players VALUES (?, ?)", (discord_id, 0)) #NEVER use regular string interpolation!
-    db.commit()
+    query("INSERT INTO players VALUES (?, ?)", (discord_id, 0))
 def print_players():
     print(query("SELECT * FROM players")) #could also fetchone if we wanted only one player
 def check_message(message,cue):
@@ -56,15 +56,17 @@ def check_message(message,cue):
         return message.content.lower().startswith('!'+ cue)
     else: 
         return False
-def get_items(discord_id):
-    return query("SELECT * FROM items WHERE player = ?",discord_id)
+#def return_items(discord_id):
+    #return query("SELECT * FROM items WHERE player = ?",discord_id)
+def take_item(discord_id, item):
+    query()
 
 @client.event
 async def on_ready():
     print(f'{client.user} ready.')
     #example code
     try:
-        create_database()
+        create_tables()
     except:
         pass
     print_players()
