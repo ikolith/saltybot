@@ -14,14 +14,16 @@ if(not BOT_TOKEN):
     print(token_error)
 client = discord.Client()
 
+available_items = []
 game_channel = ''
 
 db = sqlite3.connect("database.sqlite3") # we have just one of these for the whole program, since we don't need to share state with other processes or anything
 cursor = db.cursor() # we have just one of these for the whole program, since we don't need to share state with other processes or anything
-def query(query, values_to_substitute_in = ()):
+async def query(query, values_to_substitute_in = ()):
     cursor.execute(query, values_to_substitute_in)
     db.commit() # commit any changes to the database file
     return cursor.fetchall() # return a list of all our findings
+
 
 async def salt_spawn():
     while True:
@@ -33,48 +35,51 @@ async def salt_spawn():
             await asyncio.sleep(time_to_salt_spawn)
             print('send salt')
             await game_channel.send('salt')
+            available_items.append('salt')
 
 #if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
 #see on_ready for this code in use
 # you can also alter tables later, that's cool. there are many more commands
 #CODE should YELL at YOU
-def create_tables():
+async def create_tables():
     #there are ways we could create this using other programs or tools, but in-code is probably best for us to keep track of it.
-    query("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
-    query("CREATE TABLE owned_items (discord_id INT UNIQUE, item_type INT, scrip TEXT, FOREIGN KEY(item_type) REFERENCES items(item_type)")
-    query("CREATE TABLE items (item_type INT, description TEXT, price INT")
+    await query("CREATE TABLE owned_items (discord_id INT UNIQUE, item_type INT, scrip TEXT, FOREIGN KEY(item_type)") #REFERENCES items(item_type)")
+    await query("CREATE TABLE items (item_type INT, name TEXT, description TEXT")
+    await query("CREATE TABLE players (discord_id INT UNIQUE, points INT)")
+    #maybe should use row id for item_type?
+
 
     # I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
     # which is useful for making "pointers" from one table to another, I think
-def insert_new_player(discord_id):
-    query("INSERT INTO players VALUES (?, ?)", (discord_id, 0))
-def print_players():
-    print(query("SELECT * FROM players")) #could also fetchone if we wanted only one player
+async def insert_new_player(discord_id):
+    await query("INSERT INTO players VALUES (?, ?)", (discord_id, 0))
+async def print_players():
+    #i broke this im trying to write to the tables effectively
+    await query("SELECT * FROM players") #could also fetchone if we wanted only one player
 def check_message(message,cue):
     if game_channel != '':
         #this check could be moved to on_ready to save some time later..?
         return message.content.lower().startswith('!'+ cue)
     else: 
         return False
-#def return_items(discord_id):
-    #return query("SELECT * FROM items WHERE player = ?",discord_id)
-def take_item(discord_id, item):
-    query()
+async def take_item(message):#, discord_id, item):
+    shortened = message.content.replace('!take ','')
+    #if
 
 @client.event
 async def on_ready():
     print(f'{client.user} ready.')
     #example code
     try:
-        create_tables()
+        await create_tables()
     except:
-        pass
-    print_players()
+        print('create table didnt work')
+        await print_players()
     try:
-        insert_new_player(42)
+        await insert_new_player(42)
     except:
         pass #there's already a player there (mostly because this is dummy example code)
-    print_players()
+    #print_players()
     await salt_spawn()
 
 @client.event
@@ -83,14 +88,19 @@ async def on_message(message):
     if message.author == client.user:
         return #don't react to our own messages
 
-    if check_message(message,'test'):
-        await message.channel.send(':salt:')
-    
-    if check_message(message,'gamehere'):
+    if message.content.lower().startswith('!gamehere'):
         print('got it: game_channel = ' + str(message.channel))
         global game_channel
         game_channel = message.channel
 
+
+    if check_message(message,'take'):
+        await take_item(message)
+
+    if check_message(message,'test'):
+        await print_players()
+
+    
 #TODO: we probably want a more elegant dispatch system than string startswith checking
         #this code could be compressed/refactored.
 #TODO: gosh, we're gonna have to parse, aren't we? yee haw.
@@ -98,15 +108,12 @@ async def on_message(message):
     if check_message(message,'leanin'):
         await message.channel.send(message.author.name + " activates Lean In Stance, gaining +1 to offensive moves!")
         #TODO: this doesnt do anything yet lol
-
     if check_message(message,'getout'):
         await message.channel.send(message.author.name + " activates Get Out Stance, gaining +1 to retreative moves!")
         #TODO: this doesnt do anything yet lol
-
     if check_message(message,'playchicken'):
         await message.channel.send(message.author.name + " remembers what Herbert the Affectionate Insectoid said about chicken, and runs off a cliff for no reason!")
         #TODO: this should actually let you play chicken
-
     if check_message(message,'saltman'):
         await message.channel.send(':snowman2:')
     if check_message(message,'jungledog'):
