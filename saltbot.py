@@ -82,6 +82,10 @@ async def on_ready():
 
 def check_message(message,cue): return game_channel and message.content.lower().startswith('!'+ cue) #truthy/falsy shortcircuit and
 
+bot_prefix = "!"
+def consume(eat_this, from_this):  #this may not be named great
+    return from_this.lower().startswith(eat_this.lower()) and (from_this.lower().replace(eat_this.lower(),"",1) or True) #this is TOO cramped, hard to tell what it does
+
 @client.event
 async def on_message(message):
     #print(message) #debug feature TODO: a way to turn this off/on
@@ -91,16 +95,14 @@ async def on_message(message):
 
     if check_message(message,'test'):
         await message.channel.send(':salt:')
-    
+
     if message.content.lower().startswith('!gamehere'): #can't use check_message because that checks in game_channel is set
         print('got it: game_channel = ' + str(message.channel))
         global game_channel
         game_channel = message.channel
 
-#TODO: we probably want a more elegant dispatch system than string startswith checking
-        #this code could be compressed/refactored.
-#TODO: gosh, we're gonna have to parse, aren't we? yee haw.
-#TODO: also the more elegant system should check game channel and so forth
+    #now we get into the big boy parsing
+        #command = message.content.lower()
     if check_message(message,'leanin'):
         await message.channel.send(message.author.name + " activates Lean In Stance, gaining +1 to offensive moves!")
         #TODO: this doesnt do anything yet lol
@@ -113,7 +115,7 @@ async def on_message(message):
         await message.channel.send(message.author.name + " remembers what Herbert the Affectionate Insectoid said about chicken, and runs off a cliff for no reason!")
         #TODO: this should actually let you play chicken
 
-    if check_message(message,'saltman'):
+    if consume('!saltman',message.content):
         await message.channel.send(':snowman2:')
     if check_message(message,'jungledog'):
         await message.channel.send(':dog2:')
