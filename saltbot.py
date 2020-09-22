@@ -51,7 +51,7 @@ def insert_new_player(discord_id):
 def print_players():
     print(query("SELECT * FROM players")) #could also fetchone if we wanted only one player
 def check_message(message,cue):
-    if game_channel != '':
+    if game_channel != '' or message.content.lower().startswith('!gamehere'):
         #this check could be moved to on_ready to save some time later..?
         return message.content.lower().startswith('!'+ cue)
     else: 
