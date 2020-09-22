@@ -23,6 +23,10 @@ def query(query, values_to_substitute_in = ()):
     db.commit() # commit any changes to the database file
     return cursor.fetchall() # return a list of all our findings
 
+#this isnt called in the code itself, its here to help me create items quickly
+def create_item(item_type,description, price, image_name):
+    query('''INSERT INTO items (item_type, description, price, image_name) VALUES(?,?,?)''',(str(item_type),str(description),int(price),str(image_name))
+
 async def salt_spawn():
     while True:
         await asyncio.sleep(1)
