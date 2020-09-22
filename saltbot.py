@@ -76,7 +76,11 @@ async def on_ready():
     except:
         pass #there's already a player there (mostly because this is dummy example code)
     print_players()
-    print(query("SELECT * FROM sqlite_master WHERE type='table';"))
+    #we could make a more sophiticated system, but for now if you want to make or alter a table just paste the line here when you put it into create_tables
+
+    #and remove it afterwards; that way it will execute once even though tables are already created
+    # or you could just put the line at the TOP of create_tables, before the ones that are already created, I guess.
+    print(query("SELECT * FROM sqlite_master WHERE type='table';")) #TODO: print this out to a file to track schema changes. MAYBE: read that file in in create_tables()
     await salt_spawn()
 
 @client.event
