@@ -57,12 +57,7 @@ def insert_new_player(discord_id):
     query("INSERT INTO players VALUES (?, ?)", (discord_id, 0))
 def print_players():
     print(query("SELECT * FROM players")) #could also fetchone if we wanted only one player
-def check_message(message,cue):
-    if game_channel != '' or message.content.lower().startswith('!gamehere'):
-        #this check could be moved to on_ready to save some time later..?
-        return message.content.lower().startswith('!'+ cue)
-    else: 
-        return False
+
 #def return_items(discord_id):
     #return query("SELECT * FROM items WHERE player = ?",discord_id)
 def take_item(discord_id, item):
@@ -85,16 +80,19 @@ async def on_ready():
     write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
     await salt_spawn()
 
+def check_message(message,cue): return game_channel and message.content.lower().startswith('!'+ cue) #truthy/falsy shortcircuit and
+
 @client.event
 async def on_message(message):
-
+    #print(message) #debug feature TODO: a way to turn this off/on
+    print(message.content)
     if message.author == client.user:
         return #don't react to our own messages
 
     if check_message(message,'test'):
         await message.channel.send(':salt:')
     
-    if check_message(message,'gamehere'):
+    if message.content.lower().startswith('!gamehere'): #can't use check_message because that checks in game_channel is set
         print('got it: game_channel = ' + str(message.channel))
         global game_channel
         game_channel = message.channel
