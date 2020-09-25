@@ -114,9 +114,6 @@ async def on_message(message):
         global spawn_channel
         spawn_channel = message.channel
 
-    if check_message(message,'rasc'):
-        await message.channel.send('rascd')
-    
     if check_message(message,'take'):
         take_item(message)
 
