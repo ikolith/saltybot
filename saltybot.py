@@ -114,9 +114,6 @@ async def on_message(message):
         global spawn_channel
         spawn_channel = message.channel
 
-    if check_message(message,'rasc'):
-        await message.channel.send('rascd')
-    
     if check_message(message,'take'):
         take_item(message)
 
@@ -154,7 +151,11 @@ async def on_message(message):
     if consume('!ask '):
         if consume("walrus"):
             await message.channel.send(':gun:')
-        if consume("herbert"):
+        elif consume("herbert"):
             await message.channel.send('"Eheheh so you want to know how to play chicken, huh?" says Herbert the Affectionate Insectoid. "Well it\'s simple. Just !playchicken to run off a cliff!"')
+        elif consume("brofucius"):
+            await message.channel.send('Brofucius say, "!leanin to be more aggressive."') #TODO: this should be some kind of riddle or something I guess
+        elif consume("brozi"):
+            await message.channel.send('"!getout to be more retreative," says Brozi.') #TODO: this should be some kind of riddle or something I guess
 
 client.run(BOT_TOKEN)
