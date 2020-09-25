@@ -89,8 +89,8 @@ async def on_ready():
     # or you could just put the line at the TOP of create_tables, before the ones that are already created, I guess.
     write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
     await asyncio.gather(
-        spawn_handler('pickaxe',1,3,'You spot a -pickaxe- on the ground',100,'Stabby Jim runs by and swipes the pickaxe.'),
-        spawn_handler('salt rock',1,3,'You spot a -salt rock-.',100,'crawls up the cave wall and disappears into it.'))
+        spawn_handler('pickaxe',1,3,'A -pickaxe- lies on the ground.',100,'Stabby Jim runs by and swipes the pickaxe.'),
+        spawn_handler('salt rock',1,3,'A -salt rock- rolls into view.',100,'crawls up the cave wall and disappears into it.'))
     
 def check_message(message,cue): return message.content.lower().startswith('!'+ cue) 
 
