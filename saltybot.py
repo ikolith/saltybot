@@ -40,9 +40,14 @@ async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_
             await spawn_channel.send('-'+item_query[0]+'- ' + expiration_message)
 
 def take_item(message):
+    take_list = []
     print(available_items)
     message_list = message.content.split(' ')
-    print(message_list)
+    for item in available_items:
+        if item[0] in message_list:
+            take_list.append(item)
+    print(take_list)
+
 
 #if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
 #see on_ready for this code in use
@@ -118,7 +123,7 @@ async def on_message(message):
         take_item(message)
 
     #now we get into the big boy parsing #TODO: implement parsing
-    command = message.content.lower()
+    command = message.content.lower() #why not just pass in message?
     def consume(eat_this):  #this may not be named great
         nonlocal command
         if command.lower().startswith(eat_this.lower()):
