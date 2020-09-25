@@ -110,8 +110,6 @@ async def on_ready():
 def check_message(message,cue): return game_channel and message.content.lower().startswith('!'+ cue) #truthy/falsy shortcircuit and
 
 bot_prefix = "!"
-def consume(eat_this, from_this):  #this may not be named great
-    return from_this.lower().startswith(eat_this.lower()) and (from_this.lower().replace(eat_this.lower(),"",1) or True) #this is TOO cramped, hard to tell what it does
 
 @client.event
 async def on_message(message):
@@ -137,8 +135,16 @@ async def on_message(message):
     if check_message(message,'take'):
         take_item(message)
 
-    #now we get into the big boy parsing
-        #command = message.content.lower()
+    #now we get into the big boy parsing #TODO: implement parsing
+    command = message.content.lower()
+    def consume(eat_this):  #this may not be named great
+        nonlocal command
+        if command.lower().startswith(eat_this.lower()):
+            command = command.lower().replace(eat_this.lower(),"",1)
+            return True
+        else:
+            return False
+
     if check_message(message,'leanin'):
         await message.channel.send(message.author.name + " activates Lean In Stance, gaining +1 to offensive moves!")
         #TODO: this doesnt do anything yet lol
@@ -148,10 +154,10 @@ async def on_message(message):
         #TODO: this doesnt do anything yet lol
 
     if check_message(message,'playchicken'):
-        await message.channel.send(message.author.name + " remembers what Herbert the Affectionate Insectoid said about chicken, and runs off a cliff for no reason!")
+        await message.channel.send(message.author.name + " runs off a cliff for no reason!")
         #TODO: this should actually let you play chicken
 
-    if consume('!saltman',message.content):
+    if consume('!saltman'):
         await message.channel.send(':snowman2:')
     if check_message(message,'jungledog'):
         await message.channel.send(':dog2:')
@@ -160,6 +166,10 @@ async def on_message(message):
         #TODO: this should really be !scrip [object from inventory] [quantity of money or other object]
         await message.channel.send(message.author.name + " writes '$5' on a piece of paper and signs it!")
         
-    #if message.content.lower().startswith('')
+    if consume('!ask '):
+        if consume("walrus"):
+            await message.channel.send(':gun:')
+        if consume("herbert"):
+            await message.channel.send('"Eheheh so you want to know how to play chicken, huh?" says Herbert the Affectionate Insectoid. "Well it\'s simple. Just !playchicken to run off a cliff!"')
 
 client.run(BOT_TOKEN)
