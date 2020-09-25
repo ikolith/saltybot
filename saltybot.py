@@ -32,15 +32,17 @@ async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_
             await asyncio.sleep(time_to_spawn)
             #print(time_to_spawn) #here for testing, the two above lines will probably get consolidated later
             item_query = query('SELECT * FROM items WHERE item_type = ?',[item_type])
+            item_query = item_query[0]
             available_items.append(item_query)
-            await spawn_channel.send(spawn_message, file = discord.File ( ".\\art\\"+item_query[0][3], filename = item_query[0][3]))
+            await spawn_channel.send(spawn_message, file = discord.File ( "./art/"+item_query[3], filename = item_query[3]))
             await asyncio.sleep(time_until_expiration)
             available_items.remove(item_query)
-            await spawn_channel.send('-'+item_query[0][0]+'- ' + expiration_message)
+            await spawn_channel.send('-'+item_query[0]+'- ' + expiration_message)
 
-async def take_item(message):
-    #message.autho
-    print('whoops didnt make this yet, gonna do the player registration')
+def take_item(message):
+    print(available_items)
+    message_list = message.content.split(' ')
+    print(message_list)
 
 #if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
 #see on_ready for this code in use
