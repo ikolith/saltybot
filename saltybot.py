@@ -15,7 +15,7 @@ if(not BOT_TOKEN):
 client = discord.Client()
 
 available_items = []
-game_channel = ''
+spawn_channel = ''
 
 db = sqlite3.connect("database.sqlite3") # we have just one of these for the whole program, since we don't need to share state with other processes or anything
 cursor = db.cursor() # we have just one of these for the whole program, since we don't need to share state with other processes or anything
@@ -23,36 +23,20 @@ def query(query, values_to_substitute_in = ()):
     cursor.execute(query, values_to_substitute_in)
     db.commit() # commit any changes to the database file
     return cursor.fetchall() # return a list of all our findings
-'''
-async def post_and_spawn_item(item_query,spawn_message = ''):
 
-    available_items.remove(item_query)
-    await game_channel.send('-'+item_query[0][0]+'-' + ' crawls up the cave wall and disappears into it.')
-
-async def salt_spawn():
-    while True:
-        await asyncio.sleep(1)
-        #print(game_channel)
-        if game_channel != '':
-            time_to_salt_spawn = randint(5,500)
-            print(time_to_salt_spawn)
-            await asyncio.sleep(time_to_salt_spawn)
-            salt_rock = query('SELECT * FROM items WHERE item_type = 'salt rock' ')
-            await item_spawn(salt_rock,'You spot a -salt rock-.')
-'''
 async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_message, time_until_expiration, expiration_message):
     while True:
         await asyncio.sleep(1)
-        if game_channel != '':
+        if spawn_channel != '':
             time_to_spawn = randint(time_to_spawn_low,time_to_spawn_high) #should replace this with a tuple or something later
             await asyncio.sleep(time_to_spawn)
             #print(time_to_spawn) #here for testing, the two above lines will probably get consolidated later
             item_query = query('SELECT * FROM items WHERE item_type = ?',[item_type])
             available_items.append(item_query)
-            await game_channel.send(spawn_message, file = discord.File ( ".\\art\\"+item_query[0][3], filename = item_query[0][3]))
+            await spawn_channel.send(spawn_message, file = discord.File ( ".\\art\\"+item_query[0][3], filename = item_query[0][3]))
             await asyncio.sleep(time_until_expiration)
             available_items.remove(item_query)
-            await game_channel.send('-'+item_query[0][0]+'- ' + expiration_message)
+            await spawn_channel.send('-'+item_query[0][0]+'- ' + expiration_message)
 
 async def take_item(message):
     #message.autho
@@ -103,11 +87,10 @@ async def on_ready():
     # or you could just put the line at the TOP of create_tables, before the ones that are already created, I guess.
     write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
     await asyncio.gather(
-        spawn_handler('pickaxe',10,30,'You spot a -pickaxe- on the ground',100,'Stabby Jim runs by and swipes the pickaxe.'),
-        spawn_handler('salt rock',10,30,'You spot a -salt rock-.',100,'crawls up the cave wall and disappears into it.'))
+        spawn_handler('pickaxe',1,3,'You spot a -pickaxe- on the ground',100,'Stabby Jim runs by and swipes the pickaxe.'),
+        spawn_handler('salt rock',1,3,'You spot a -salt rock-.',100,'crawls up the cave wall and disappears into it.'))
     
-
-def check_message(message,cue): return game_channel and message.content.lower().startswith('!'+ cue) #truthy/falsy shortcircuit and
+def check_message(message,cue): return message.content.lower().startswith('!'+ cue) 
 
 bot_prefix = "!"
 def consume(eat_this, from_this):  #this may not be named great
@@ -124,12 +107,12 @@ async def on_message(message):
         insert_new_player(message.author.id)
 
     if check_message(message,'test'):
-        await message.channel.send(':salt:')
+        await message.channel.send('loaf')
 
-    if message.content.lower().startswith('!gamehere'): #can't use check_message because that checks in game_channel is set
-        print('got it: game_channel = ' + str(message.channel))
-        global game_channel
-        game_channel = message.channel
+    if message.content.lower().startswith('!spawnhere'): #can't use check_message because that checks in spawn_channel is set
+        print('got it: spawn_channel = ' + str(message.channel))
+        global spawn_channel
+        spawn_channel = message.channel
 
     if check_message(message,'rasc'):
         await message.channel.send('rascd')
