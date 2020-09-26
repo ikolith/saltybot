@@ -155,9 +155,9 @@ async def on_message(message):
     npcs = {
         "walrus": ":gun:",
         "herbert": '"Eheheh so you want to know how to play chicken, huh?" says Herbert the Affectionate Insectoid. "Well it\'s simple. Just !playchicken to run off a cliff!"',
-        #TODO: these should be some kind of riddle or something I guess:
-        "brofucius": 'Brofucius say, "!leanin to be more aggressive."',
-        "brozi": '"!getout to be more retreative," says Brozi.'
+        #TODO: broify these?
+        "brofucius": 'Brofucius say, "The philosopher Yu said, \'When agreements are made according to what is right, what is spoken can be made good. When respect is shown according to what is proper, one keeps far from shame and disgrace. When the parties upon whom a man !leanin are proper persons to be intimate with, he can make them his guides and masters.\'"',
+        "brozi": '"Holding and filling it, are not as good as !getout," says Brozi.'
     }
     npcs["paul"] = "Paul Rizer lists all the people he knows: "+ " ".join(npcs)
     if consume('!ask '):
