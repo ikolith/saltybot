@@ -154,15 +154,18 @@ async def on_message(message):
         #TODO: should require paper and writing utensil (or... any object? put scrip on a dog lol)
         #TODO: this should really be !scrip [object from inventory] [quantity of money or other object]
         await message.channel.send(message.author.name + " writes '$5' on a piece of paper and signs it!")
-        
+    npcs = {
+        "walrus": ":gun:",
+        "herbert": '"Eheheh so you want to know how to play chicken, huh?" says Herbert the Affectionate Insectoid. "Well it\'s simple. Just !playchicken to run off a cliff!"',
+        #TODO: broify these?
+        "brofucius": 'Brofucius say, "The philosopher Yu said, \'When agreements are made according to what is right, what is spoken can be made good. When respect is shown according to what is proper, one keeps far from shame and disgrace. When the parties upon whom a man !leanin are proper persons to be intimate with, he can make them his guides and masters.\'"',
+        "brozi": '"Holding and filling it, are not as good as !getout," says Brozi.'
+    }
+    npcs["paul"] = "Paul Rizer lists all the people he knows: "+ " ".join(npcs)
     if consume('!ask '):
-        if consume("walrus"):
-            await message.channel.send(':gun:')
-        elif consume("herbert"):
-            await message.channel.send('"Eheheh so you want to know how to play chicken, huh?" says Herbert the Affectionate Insectoid. "Well it\'s simple. Just !playchicken to run off a cliff!"')
-        elif consume("brofucius"):
-            await message.channel.send('Brofucius say, "!leanin to be more aggressive."') #TODO: this should be some kind of riddle or something I guess
-        elif consume("brozi"):
-            await message.channel.send('"!getout to be more retreative," says Brozi.') #TODO: this should be some kind of riddle or something I guess
+        for key, value in npcs.items():
+            if consume(key):
+                await message.channel.send(value)
+                return
 
 client.run(BOT_TOKEN)
