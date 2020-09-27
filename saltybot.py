@@ -157,7 +157,9 @@ async def on_message(message):
         "herbert": '"Eheheh so you want to know how to play chicken, huh?" says Herbert the Affectionate Insectoid. "Well it\'s simple. Just !playchicken to run off a cliff!"',
         #TODO: broify these?
         "brofucius": 'Brofucius say, "The philosopher Yu said, \'When agreements are made according to what is right, what is spoken can be made good. When respect is shown according to what is proper, one keeps far from shame and disgrace. When the parties upon whom a man !leanin are proper persons to be intimate with, he can make them his guides and masters.\'"',
-        "brozi": '"Holding and filling it, are not as good as !getout," says Brozi.'
+        "brozi": '"Holding and filling it, are not as good as !getout," says Brozi.',
+        'joe': "As soon as you make eye contact with the Duke of Joe, his eyes flash red. \"The pact is sealed,\" he chuckles, \" you are now a boo hoo boy for the Tong of Joe!\"",
+        'sanders': "As soon as you make eye contact with the Duke of Sanders, his eyes flash red. \"The pact is sealed,\" he chuckles, \" you are now a boo hoo boy for the Tong of Sanders!\"" #Duke of Sanders is a grizzly bear
     }
     npcs["paul"] = "Paul Rizer lists all the people he knows: "+ " ".join(npcs)
     if consume('!ask '):
