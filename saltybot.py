@@ -47,6 +47,8 @@ def take_item(message):
         if item[0] in message_list:
             take_list.append(item)
     print(take_list)
+    #query('INSERT INTO owned_items (discord_id, item_type) VALUES (?,?)',(message.author_id, item))
+    
 
 
 #if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
@@ -123,7 +125,7 @@ async def on_message(message):
         take_item(message)
 
     #now we get into the big boy parsing #TODO: implement parsing
-    command = message.content.lower() #why not just pass in message?
+    command = message.content.lower() 
     def consume(eat_this):  #this may not be named great
         nonlocal command
         if command.lower().startswith(eat_this.lower()):
