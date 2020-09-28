@@ -5,6 +5,7 @@ import sqlite3
 import os
 import asyncio
 from random import randint
+
 token_error = "No token found. Please create a file called secret_token.py in the same directory as saltybot and put in that file the text: BOT_TOKEN=\"whatever.your.bot.token.is.blah.blah.blah\"\nthe rest of the script will attempt to run now, but almost certainly will not work.\n"
 try:
     from secret_token import BOT_TOKEN
@@ -22,7 +23,7 @@ cursor = db.cursor() # we have just one of these for the whole program, since we
 def query(query, values_to_substitute_in = ()):
     cursor.execute(query, values_to_substitute_in)
     db.commit() # commit any changes to the database file
-    return cursor.fetchall() # return a list of all our findings
+    return cursor.fetchall() # return a list of all our findings #this seems to usually return a tuple of tuples of length one? weird
 
 async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_message, time_until_expiration, expiration_message):
     while True:
@@ -48,15 +49,26 @@ def take_item(message):
             take_list.append(item)
     print(take_list)
     #query('INSERT INTO owned_items (discord_id, item_type) VALUES (?,?)',(message.author_id, item))
-    
 
 
-#if we want to use sqlite3, here's how we would do it: (based on https://docs.python.org/3/library/sqlite3.html)
-#see on_ready for this code in use
-# you can also alter tables later, that's cool. there are many more commands
-# I guess all tables in sqlite have a hidden ROWID which works as an autoincrementing integer primary key https://sqlite.org/autoinc.html
-# which is useful for making foreign key references from one table to another, I think
+
 #CODE should YELL at YOU
+def get_schema(): return query("SELECT sql FROM sqlite_master WHERE type='table';")
+def get_schema_as_lines(): return "\n".join([i[0] for i in get_schema()])
+
+def sql_repl(): #TODO: there is no way to make statements without commiting, which is a bit dangerous
+    while True:
+        response = input("please enter a sql statement, \"help\" (\"h\"/\"?\"), or \"quit\" (\"q\"/\"x\")> ")
+        if response.lower() == "help" or response.lower() == "h" or response.lower() == "?":
+            print("you are beyond help")
+        elif response.lower() == "quit" or response.lower() == "q" or response.lower() == "x":
+            return
+        else:
+            try:
+                print(query(response))
+            except sqlite3.OperationalError as e:
+                print(e)
+
 def create_tables():
     with open('schema.sql','r') as f:
         for line in f.readlines():
@@ -65,10 +77,37 @@ def create_tables():
             except sqlite3.OperationalError as e:
                 print(e)
 
+def sync_schema():
+    with open('schema.sql','r') as f:
+        extant_schema = f.read() #I think this doesn't work to read twice, so we have to cache it
+        if any(get_schema()) and extant_schema != get_schema_as_lines():
+            print("!!!SCHEMA CONFLICT DETECTED!!!")
+            print("schema.sql:")
+            print(extant_schema)
+            print("internal schema:")
+            print(get_schema_as_lines())
+            with open('tmp.schema.sql','w') as tmp:
+                tmp.write(get_schema_as_lines())
+            print("The database schema specified in schema.sql does not match the schema in the current database, which has been printed to tmp.schema.sql")
+            print("This likely means that the database schema has been updated since you last ran this project.")
+            print("Your three options are to [d]elete the current database and remake it with the new schema (ALL YOUR DATA WILL BE LOST!), [a]lter the database here on the command line using statements like ALTER TABLE table_name ADD column_name datatype; (safe if you know what you're doing), or a[b]ort this run of the program and try to alter the table through some external means like a sqlite3 database editing tool.")
+            print("Secret option: if you're sure the difference in schema consists only in new tables having been added, you can type literally anything else to just proceed with the program.")
+            response = input("d, a, b? > ")
+            if response == "d":
+                os.replace('database.sqlite3', 'database.sqlite3.bak') #moves a file. the .bak files serves as a backup
+            elif response == "a":
+                sql_repl()
+                print("Attempting to proceed...")
+                sync_schema() #is this going to try to open f again?
+            elif response == "b":
+                exit()
+            create_tables() #is this going to try to open f again?
+
 def write_schema():
+    os.replace('schema.sql', 'schema.sql.bak') #moves a file. the .bak files serves as a backup
     with open('schema.sql',"w") as f:
-        for result in query("SELECT sql FROM sqlite_master WHERE type='table';"):
-            f.write(result[0]+'\n')
+        for line in get_schema():
+            f.write(line[0]+'\n')
 
 def insert_new_player(discord_id):
     query("INSERT INTO players VALUES (?, ?)", (discord_id, 0))
@@ -83,7 +122,8 @@ def print_players():
 @client.event
 async def on_ready():
     print(f'{client.user} ready.')
-    create_tables()
+    print(get_schema())
+    sync_schema()
     print_players()
     try:
         insert_new_player(42)
@@ -94,7 +134,7 @@ async def on_ready():
 
     #and remove it afterwards; that way it will execute once even though tables are already created
     # or you could just put the line at the TOP of create_tables, before the ones that are already created, I guess.
-    write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
+    #write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
     await asyncio.gather(
         spawn_handler('pickaxe',1,3,'A -pickaxe- lies on the ground.',100,'Stabby Jim runs by and swipes the pickaxe.'),
         spawn_handler('salt rock',1,3,'A -salt rock- rolls into view.',100,'crawls up the cave wall and disappears into it.'))
