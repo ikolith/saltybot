@@ -89,7 +89,7 @@ def sync_schema():
             print("The database schema specified in schema.sql does not match the schema in the current database, which has been printed to tmp.schema.sql")
             print("This likely means that the database schema has been updated since you last ran this project.")
             print("Your three options are to [d]elete the current database and remake it with the new schema (ALL YOUR DATA WILL BE LOST!), [a]lter the database here on the command line using statements like ALTER TABLE table_name ADD column_name datatype; (safe if you know what you're doing), or a[b]ort this run of the program and try to alter the table through some external means like a sqlite3 database editing tool.")
-            print("Secret option: if you're sure the difference in schema consists only in new tables having been added, you can type literally anything else to just proceed with the program.")
+            print("Secret option: if you're sure the difference in schema consists only in new tables having been added, you can type literally anything else to just proceed with the program. This can also create a new database.")
             response = input("d, a, b? > ")
             if response == "d":
                 db.close()
@@ -143,6 +143,7 @@ bot_prefix = "!"
 @client.event
 async def on_message(message):
     command = message.content.lower()
+    print(command)
     def consume(eat_this):  #this may not be named great
         nonlocal command
         if command.lower().startswith(eat_this.lower()):
