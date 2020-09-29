@@ -39,7 +39,7 @@ async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_
             await asyncio.sleep(time_until_expiration)
             available_items.remove(item_query)
             await spawn_channel.send('-'+item_query[0]+'- ' + expiration_message)
-
+'''
 def take_item(message):
     take_list = []
     print(available_items)
@@ -48,6 +48,7 @@ def take_item(message):
         if item[0] in message_list:
             take_list.append(item)
     print(take_list)
+'''
     #query('INSERT INTO owned_items (discord_id, item_type) VALUES (?,?)',(message.author_id, item))
 
 #CODE should YELL at YOU
@@ -170,7 +171,9 @@ async def on_message(message):
         spawn_channel = message.channel
 
     if consume('take'):
-        take_item(message)
+        for item in available_items:
+            print(item)
+        #print(available_items)
     #now we get into the big boy parsing #TODO: implement parsing
 
     if consume('leanin'):
