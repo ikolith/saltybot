@@ -50,8 +50,6 @@ def take_item(message):
     print(take_list)
     #query('INSERT INTO owned_items (discord_id, item_type) VALUES (?,?)',(message.author_id, item))
 
-
-
 #CODE should YELL at YOU
 def get_schema(): return query("SELECT sql FROM sqlite_master WHERE type='table';")
 def get_schema_as_lines(): return "\n".join([i[0] for i in get_schema()])
@@ -94,14 +92,15 @@ def sync_schema():
             print("Secret option: if you're sure the difference in schema consists only in new tables having been added, you can type literally anything else to just proceed with the program.")
             response = input("d, a, b? > ")
             if response == "d":
-                os.replace('database.sqlite3', 'database.sqlite3.bak') #moves a file. the .bak files serves as a backup
+                db.close()
+                os.replace('database.sqlite3', 'database.sqlite3.bak') #moves a file. the .bak files serves as a backup 
             elif response == "a":
                 sql_repl()
                 print("Attempting to proceed...")
                 sync_schema() #is this going to try to open f again?
             elif response == "b":
                 exit()
-            create_tables() #is this going to try to open f again?
+        create_tables() #is this going to try to open f again?
 
 def write_schema():
     os.replace('schema.sql', 'schema.sql.bak') #moves a file. the .bak files serves as a backup
@@ -138,34 +137,12 @@ async def on_ready():
     await asyncio.gather(
         spawn_handler('pickaxe',1,3,'A -pickaxe- lies on the ground.',100,'Stabby Jim runs by and swipes the pickaxe.'),
         spawn_handler('salt rock',1,3,'A -salt rock- rolls into view.',100,'crawls up the cave wall and disappears into it.'))
-    
-def check_message(message,cue): return message.content.lower().startswith('!'+ cue) 
 
 bot_prefix = "!"
 
 @client.event
 async def on_message(message):
-    #print(message) #debug feature TODO: a way to turn this off/on
-    print(message.content)
-    if message.author == client.user:
-        return #don't react to our own messages
-    
-    if message.author.id not in [id for tuple in query('SELECT discord_id FROM players') for id in tuple]:
-        insert_new_player(message.author.id)
-
-    if check_message(message,'test'):
-        await message.channel.send('loaf')
-
-    if message.content.lower().startswith('!spawnhere'): #can't use check_message because that checks in spawn_channel is set
-        print('got it: spawn_channel = ' + str(message.channel))
-        global spawn_channel
-        spawn_channel = message.channel
-
-    if check_message(message,'take'):
-        take_item(message)
-
-    #now we get into the big boy parsing #TODO: implement parsing
-    command = message.content.lower() 
+    command = message.content.lower()
     def consume(eat_this):  #this may not be named great
         nonlocal command
         if command.lower().startswith(eat_this.lower()):
@@ -173,24 +150,45 @@ async def on_message(message):
             return True
         else:
             return False
+    if not consume(bot_prefix):
+            return
+    #print(message) #debug feature TODO: a way to turn this off/on
+    #print(message.content)
+    if message.author == client.user:
+        return #don't react to our own messages
+    
+    if message.author.id not in [id for tuple in query('SELECT discord_id FROM players') for id in tuple]:
+        insert_new_player(message.author.id)
 
-    if check_message(message,'leanin'):
+    if consume('test'):
+        await message.channel.send('loaf')
+
+    if consume('spawnhere'): #can't use check_message because that checks in spawn_channel is set
+        print('got it: spawn_channel = ' + str(message.channel))
+        global spawn_channel
+        spawn_channel = message.channel
+
+    if consume('take'):
+        take_item(message)
+    #now we get into the big boy parsing #TODO: implement parsing
+
+    if consume('leanin'):
         await message.channel.send(message.author.name + " activates Lean In Stance, gaining +1 to offensive moves!")
         #TODO: this doesnt do anything yet lol
 
-    if check_message(message,'getout'):
+    if consume('getout'):
         await message.channel.send(message.author.name + " activates Get Out Stance, gaining +1 to retreative moves!")
         #TODO: this doesnt do anything yet lol
 
-    if check_message(message,'playchicken'):
+    if consume('playchicken'):
         await message.channel.send(message.author.name + " runs off a cliff for no reason!")
         #TODO: this should actually let you play chicken
 
-    if consume('!saltman'):
+    if consume('saltman'):
         await message.channel.send(':snowman2:')
-    if check_message(message,'jungledog'):
+    if consume('jungledog'):
         await message.channel.send(':dog2:')
-    if check_message(message,'scrip'):
+    if consume('scrip'):
         #TODO: should require paper and writing utensil (or... any object? put scrip on a dog lol)
         #TODO: this should really be !scrip [object from inventory] [quantity of money or other object]
         await message.channel.send(message.author.name + " writes '$5' on a piece of paper and signs it!")
@@ -204,7 +202,7 @@ async def on_message(message):
         'sanders': "As soon as you make eye contact with the Duke of Sanders, his eyes flash red. \"The pact is sealed,\" he chuckles, \" you are now a boo hoo boy for the Tong of Sanders!\"" #Duke of Sanders is a grizzly bear
     }
     npcs["paul"] = "Paul Rizer lists all the people he knows: "+ " ".join(npcs)
-    if consume('!ask '):
+    if consume('ask '):
         for key, value in npcs.items():
             if consume(key):
                 await message.channel.send(value)
