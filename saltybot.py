@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import discord
-import sqlite3
+import json
 import os
+import time
+import atexit
 import asyncio
 from random import randint
 
@@ -15,15 +17,12 @@ if(not BOT_TOKEN):
     print(token_error)
 client = discord.Client()
 
+#these should probably go into state eventually
 available_items = []
 spawn_channel = ''
 
-db = sqlite3.connect("database.sqlite3") # we have just one of these for the whole program, since we don't need to share state with other processes or anything
-cursor = db.cursor() # we have just one of these for the whole program, since we don't need to share state with other processes or anything
-def query(query, values_to_substitute_in = ()):
-    cursor.execute(query, values_to_substitute_in)
-    db.commit() # commit any changes to the database file
-    return cursor.fetchall() # return a list of all our findings #this seems to usually return a tuple of tuples of length one? weird
+#Don't step on my bread!
+state = {"players": {}, "items": {}}
 
 async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_message, time_until_expiration, expiration_message):
     while True:
@@ -32,7 +31,7 @@ async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_
             time_to_spawn = randint(time_to_spawn_low,time_to_spawn_high) #should replace this with a tuple or something later
             await asyncio.sleep(time_to_spawn)
             #print(time_to_spawn) #here for testing, the two above lines will probably get consolidated later
-            item_query = query('SELECT * FROM items WHERE item_type = ?',[item_type])
+            item_query = [item for item in state.items if item["item_type"] == item_type]
             item_query = item_query[0]
             available_items.append(item_query)
             await spawn_channel.send(spawn_message, file = discord.File ( "./art/"+item_query[3], filename = item_query[3]))
@@ -43,89 +42,41 @@ async def spawn_handler(item_type, time_to_spawn_low, time_to_spawn_high, spawn_
     #query('INSERT INTO owned_items (discord_id, item_type) VALUES (?,?)',(message.author_id, item))
 
 #CODE should YELL at YOU
-def get_schema(): return query("SELECT sql FROM sqlite_master WHERE type='table';")
-def get_schema_as_lines(): return "\n".join([i[0] for i in get_schema()])
+#"\"You get nothing. You LOSE, sir!\""
+def write_state():
+    global state
+    with open("tmp.backup.json.bak", "w") as f:
+        json.dump(state, f)
+    with open("state.json", "w") as f:
+        json.dump(state, f)
+    os.replace('tmp.backup.json.bak', "statebackups/"+str(int(time.time()))+" - "+time.strftime("%Y-%m-%d--%H-%M-%S")+' - state.json.bak') #moves a file. the .bak files serves as a backup
+    #this would be time_ns but I'm scared to update my python installation.
 
-def sql_repl(): #TODO: there is no way to make statements without commiting, which is a bit dangerous
-    while True:
-        response = input("please enter a sql statement, \"help\" (\"h\"/\"?\"), or \"quit\" (\"q\"/\"x\")> ")
-        if response.lower() == "help" or response.lower() == "h" or response.lower() == "?":
-            print("you are beyond help")
-        elif response.lower() == "quit" or response.lower() == "q" or response.lower() == "x":
-            return
-        else:
-            try:
-                print(query(response))
-            except sqlite3.OperationalError as e:
-                print(e)
-
-def create_tables():
-    with open('schema.sql','r') as f:
-        for line in f.readlines():
-            try:
-                query(line)
-            except sqlite3.OperationalError as e:
-                print(e)
-
-def sync_schema():
-    with open('schema.sql','r') as f:
-        extant_schema = f.read() #I think this doesn't work to read twice, so we have to cache it
-        if any(get_schema()) and extant_schema.lower().strip() != get_schema_as_lines().lower().strip():
-            print("!!!SCHEMA CONFLICT DETECTED!!!")
-            print("schema.sql:")
-            print(extant_schema)
-            print("internal schema:")
-            print(get_schema_as_lines())
-            with open('tmp.schema.sql','w') as tmp:
-                tmp.write(get_schema_as_lines())
-            print("The database schema specified in schema.sql does not match the schema in the current database, which has been printed to tmp.schema.sql")
-            print("This likely means that the database schema has been updated since you last ran this project.")
-            print("Your three options are to [d]elete the current database and remake it with the new schema (ALL YOUR DATA WILL BE LOST!), [a]lter the database here on the command line using statements like ALTER TABLE table_name ADD column_name datatype; (safe if you know what you're doing), or a[b]ort this run of the program and try to alter the table through some external means like a sqlite3 database editing tool.")
-            print("Secret option: if you're sure the difference in schema consists only in new tables having been added, you can type literally anything else to just proceed with the program. This can also create a new database.")
-            response = input("d, a, b? > ")
-            if response == "d":
-                db.close()
-                os.replace('database.sqlite3', 'database.sqlite3.bak') #moves a file. the .bak files serves as a backup 
-            elif response == "a":
-                sql_repl()
-                print("Attempting to proceed...")
-                sync_schema() #is this going to try to open f again?
-            elif response == "b":
-                exit()
-        create_tables() #is this going to try to open f again?
-
-def write_schema():
-    os.replace('schema.sql', 'schema.sql.bak') #moves a file. the .bak files serves as a backup
-    with open('schema.sql',"w") as f:
-        for line in get_schema():
-            f.write(line[0]+'\n')
+atexit.register(write_state) #when process ends or crashes (unless it crashes really badly...) it will write out the state. #should think about periodically writing out state anyway.
 
 def insert_new_player(discord_id):
-    query("INSERT INTO players VALUES (?, ?)", (discord_id, 0))
+    global state
+    if discord_id not in state["players"].keys():
+        state["players"][str(discord_id)] = {}
 def print_players():
-    print(query("SELECT * FROM players")) #could also fetchone if we wanted only one player
-
-#def return_items(discord_id):
-    #return query("SELECT * FROM items WHERE player = ?",discord_id)
-#def take_item(discord_id, item):
-    #query()
+    global state
+    print(state["players"])
 
 @client.event
 async def on_ready():
+    global state
     print(f'{client.user} ready.')
-    print(get_schema())
-    sync_schema()
-    print_players()
     try:
-        insert_new_player(42)
+        with open('state.json') as f:
+            #TODO: This makes everything a string, which may or may not be a problem.
+            state = json.load(f)
     except:
-        pass #there's already a player there (mostly because this is dummy example code)
+        print("Couldn't load state.json, so we default to the empty shell of a state given near the top of this file")
+    print("state: "+ str(state))
     print_players()
-    #we could make a more sophiticated system, but for now if you want to make or alter a table just paste the line here when you put it into create_tables
+    insert_new_player(42) #idempotent
+    print_players()
 
-    #and remove it afterwards; that way it will execute once even though tables are already created
-    # or you could just put the line at the TOP of create_tables, before the ones that are already created, I guess.
-    #write_schema() #TODO: we can create tables from schema and write the schema down, but what about when we want to populate semi-constant tables, like types of item? #and altering tables could get messy...
     await asyncio.gather(
         spawn_handler('pickaxe',1,3,'A -pickaxe- lies on the ground.',100,'Stabby Jim runs by and swipes the pickaxe.'),
         spawn_handler('salt rock',1,3,'A -salt rock- rolls into view.',100,'crawls up the cave wall and disappears into it.'))
@@ -134,6 +85,7 @@ bot_prefix = "!"
 
 @client.event
 async def on_message(message):
+    global state
     command = message.content.lower()
     print(command)
     def consume(eat_this):  #this may not be named great
@@ -150,13 +102,14 @@ async def on_message(message):
     if message.author == client.user:
         return #don't react to our own messages
     
-    if message.author.id not in [id for tuple in query('SELECT discord_id FROM players') for id in tuple]:
+    if str(message.author.id) not in state["players"].keys():
         insert_new_player(message.author.id)
+        print("I'm inserting here!")
 
     if consume('test'):
         await message.channel.send('loaf')
 
-    if consume('spawnhere'): #can't use check_message because that checks in spawn_channel is set
+    if consume('spawnhere'):
         print('got it: spawn_channel = ' + str(message.channel))
         global spawn_channel
         spawn_channel = message.channel
@@ -184,7 +137,7 @@ async def on_message(message):
     if consume('jungledog'):
         await message.channel.send(':dog2:')
     if consume('scrip'):
-        #TODO: should require paper and writing utensil (or... any object? put scrip on a dog lol)
+        #TODO: should require paper (or... any object? put scrip on a dog lol) and writing utensil
         #TODO: this should really be !scrip [object from inventory] [quantity of money or other object]
         await message.channel.send(message.author.name + " writes '$5' on a piece of paper and signs it!")
     npcs = {
@@ -194,9 +147,9 @@ async def on_message(message):
         "brofucius": 'Brofucius say, "The philosopher Yu said, \'When agreements are made according to what is right, what is spoken can be made good. When respect is shown according to what is proper, one keeps far from shame and disgrace. When the parties upon whom a man !leanin are proper persons to be intimate with, he can make them his guides and masters.\'"',
         "brozi": '"Holding and filling it, are not as good as !getout," says Brozi.',
         'joe': "As soon as you make eye contact with the Duke of Joe, his eyes flash red. \"The pact is sealed,\" he chuckles, \" you are now a boo hoo boy for the Tong of Joe!\"",
-        'sanders': "As soon as you make eye contact with the Duke of Sanders, his eyes flash red. \"The pact is sealed,\" he chuckles, \" you are now a boo hoo boy for the Tong of Sanders!\"" #Duke of Sanders is a grizzly bear
-        'ben':  "Ben Stiller, The Actor, The American One, From Real Life (No Relation), takes a puff of his pipe. \"Ah, yes, to quote https://en.wikipedia.org/wiki/Ben_Stiller, Benjamin Edward Meara Stiller (born November 30, 1965) is an American actor, comedian, film producer, film director, and writer. He is the son of the late comedians and actors Jerry Stiller and Anne Meara.[1] After beginning his acting career with a play, Stiller wrote several mockumentaries and was offered his own show, titled The Ben Stiller Show, which he produced and hosted for its 13-episode run. Having previously acted in television, he began acting in films. He made his directorial debut with Reality Bites. Throughout his career he has written, starred in, directed, or produced more than 50 films including The Secret Life of Walter Mitty, Zoolander, The Cable Guy, There's Something About Mary, the Meet the Parents trilogy, DodgeBall, Tropic Thunder, the Madagascar series, and the Night at the Museum trilogy. He has also made numerous cameos in music videos, television shows, and films.[2] Stiller is a member of a group of comedic actors colloquially known as the Frat Pack. His films have grossed more than $2.6 billion in Canada and the United States, with an average of $79 million per film.[3] Throughout his career, he has received various awards and honors, including an Emmy Award, multiple MTV Movie Awards, a Britannia Award and a Teen Choice Award.\" He takes another puff of his pipe. \"Not me though.\""
-        'papa': "Papa Conflictdollar says, \"more like crapiDEADism, if you know what i mean!\""
+        'sanders': "As soon as you make eye contact with the Duke of Sanders, his eyes flash red. \"The pact is sealed,\" he chuckles, \" you are now a boo hoo boy for the Tong of Sanders!\"", #Duke of Sanders is a grizzly bear
+        'ben':  "Ben Stiller, The Actor, The American One, From Real Life (No Relation), takes a puff of his pipe. \"Ah, yes, to quote https://en.wikipedia.org/wiki/Ben_Stiller, Benjamin Edward Meara Stiller (born November 30, 1965) is an American actor, comedian, film producer, film director, and writer. He is the son of the late comedians and actors Jerry Stiller and Anne Meara.[1] After beginning his acting career with a play, Stiller wrote several mockumentaries and was offered his own show, titled The Ben Stiller Show, which he produced and hosted for its 13-episode run. Having previously acted in television, he began acting in films. He made his directorial debut with Reality Bites. Throughout his career he has written, starred in, directed, or produced more than 50 films including The Secret Life of Walter Mitty, Zoolander, The Cable Guy, There's Something About Mary, the Meet the Parents trilogy, DodgeBall, Tropic Thunder, the Madagascar series, and the Night at the Museum trilogy. He has also made numerous cameos in music videos, television shows, and films.[2] Stiller is a member of a group of comedic actors colloquially known as the Frat Pack. His films have grossed more than $2.6 billion in Canada and the United States, with an average of $79 million per film.[3] Throughout his career, he has received various awards and honors, including an Emmy Award, multiple MTV Movie Awards, a Britannia Award and a Teen Choice Award.\" He takes another puff of his pipe. \"Not me though.\"",
+        'papa': "Papa Conflictdollar says, \"more like crapiDEADism, if you know what i mean!\"",
         'paul': "\"Where are we?\" you ask Paul Rizer. Paul looks at you like you're stupid. \"Neoklahoma,\" he responds, \"The greatest country on earth!\"."
     }
     npcs["Kwan"] = "Kwan Titty lists all the people he knows: "+ " ".join(npcs) #don't include hot towel guy in this list

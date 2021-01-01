@@ -6,3 +6,6 @@ database.sqlite3
 __pycache__
 tmp.*
 *.bak
+statebackups
+state.json
+tmp.backup.json.bak
